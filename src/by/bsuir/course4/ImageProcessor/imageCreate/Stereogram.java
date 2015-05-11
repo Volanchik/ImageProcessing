@@ -19,8 +19,8 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.stream.ImageInputStream;
 
 public class Stereogram  {
-	
-	public static final String ROOT_PATH = "D:\\Work\\Image";
+	//public static final String ROOT_PATH = "D:\\Work\\Image";
+	public static final String ROOT_PATH = "c:\\Users\\Olia\\git\\ImageProcessing\\Image";
 
 	public static final byte FIRST_BYTE_OFFSET = 0;
 
@@ -37,6 +37,8 @@ public class Stereogram  {
 	private BufferedImage firstImage;
 
 	private BufferedImage secondImage;
+	
+	private BufferedImage tempSecondImage;
 
 	private int [] firstImagePixels;
 
@@ -55,10 +57,9 @@ public class Stereogram  {
 	private int btw_eyes = 50;
 
 	
-	public Stereogram(int input_height, int input_width, int input_patt_step) {
+	public Stereogram(int input_btw_eyes, int input_patt_step) {
 		
-		height = input_height;
-		width = input_width;
+		btw_eyes = input_btw_eyes;
 		patt_step = input_patt_step;
 		
 	}
@@ -162,18 +163,38 @@ public class Stereogram  {
 	//-----------------------------------------------------------------------------------------------
 	public void process(final String ... path){
 		try {
+		height = firstImage.getHeight();
+		width = firstImage.getWidth();
 		firstImage = readImage(path[0]);
 		secondImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		firstImagePixels = getImagePixels(firstImage);
 		secondImagePixels = getImagePixels(secondImage);
 		if(path.length >= 2) {
 			secondImage = readImage(path[1]);
-			if (firstImage.getWidth() != secondImage.getWidth()
-					|| firstImage.getHeight() != secondImage.getHeight()) {
-				throw new IllegalArgumentException("Check the size of images.");
+			if (firstImage.getWidth()%secondImage.getWidth()==0
+				&& firstImage.getHeight()%secondImage.getHeight()==0) {
+				
+				if((firstImage.getWidth() != secondImage.getWidth()
+						|| firstImage.getHeight() != secondImage.getHeight())){
+					tempSecondImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+					for ( int widthCount = 0; widthCount < (tempSecondImage.getWidth()/secondImage.getWidth()); widthCount++){
+					for ( int count = 0; count < (tempSecondImage.getHeight()/secondImage.getHeight()); count++){
+					for ( int i = 0; i < (secondImage.getHeight()); i++){
+						for( int j= 0; j < (secondImage.getWidth()); j++){
+							tempSecondImage.setRGB(i+(secondImage.getWidth()*widthCount), j+(secondImage.getHeight()*count), secondImage.getRGB(i, j));
+						}
+						}
+						}
+					File resultFile = new File(ROOT_PATH + "\\" + "Stereogram.png");
+					ImageIO.write(tempSecondImage, "png", resultFile);
+				}
+					
+				}
+				//throw new IllegalArgumentException("Check the size of images.");
 			}
-			secondImagePixels = getImagePixels(secondImage);
+			secondImagePixels = getImagePixels(tempSecondImage);
 		}
+		else{
 		
 		//
 		//	Distance between eyes is 60 pixels (btw_eyes)
@@ -204,6 +225,7 @@ public class Stereogram  {
 			   }
 		   }
 		}
+		}
 		
 		//for each stripe 
 		for( int h = 0; h < (int)(width/patt_step); h++){			   
@@ -226,9 +248,15 @@ public class Stereogram  {
 				   }
 			    }
 			}
-		
 		File resultFile = new File(ROOT_PATH + "\\" + "Stereogram.png");
-		ImageIO.write(secondImage, "png", resultFile);
+		if (tempSecondImage!=null){
+			ImageIO.write(tempSecondImage, "png", resultFile);
+		}
+		else{
+			ImageIO.write(secondImage, "png", resultFile);
+		}
+		
+		
 		}catch(IOException e){
 			e.printStackTrace();
 		} catch (URISyntaxException e) {
