@@ -12,7 +12,7 @@ public class EntryPoint {
 			String image3 = "images.png";
 			String image4 = "Woody.png";
 			String image5 = "dot.png";
-			String image6 = "spiderman.png";
+			String image6 = "logo.png";
 			String image7 = "cats100100.png";
 			
 	/*		AnaglyphProcessor anaglyph = new AnaglyphProcessor();			
@@ -45,8 +45,10 @@ public class EntryPoint {
 			scaling.process(image4);
 			
 			*/
-			Stereogram stereo = new Stereogram(70, 100);
+			Stereogram stereo = new Stereogram(70);
 			stereo.process(image6,image7);
+
+
 			
 	}
 

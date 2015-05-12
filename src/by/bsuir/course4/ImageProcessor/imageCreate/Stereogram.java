@@ -34,35 +34,42 @@ public class Stereogram  {
 
 	public static final int THIRD_BYTE_MASK = 0xFF << THIRD_BYTE_OFFSET;
 
-	private BufferedImage firstImage;
+	private BufferedImage depthMapImage;
 
-	private BufferedImage secondImage;
+	private BufferedImage patternImage;
 	
-	private BufferedImage tempSecondImage;
+	private BufferedImage resultImage;
 
-	private int [] firstImagePixels;
+	private int [] depthMapImagePixels;
 
-	private int [] secondImagePixels;
+	private int [] resultImagePixels;
 
 	private int width;
 
 	private int height;
 	
+	private int patt_step;
+	
 	public static final byte FOURTH_BYTE_OFFSET = 24;
 	
 	public static final int FOURTH_BYTE_MASK = 0xFF << 24;
-		
-	private int patt_step;
 	
 	private int btw_eyes = 50;
 
-	
+	//for pattern image
+	public Stereogram(int input_btw_eyes) {
+		
+		btw_eyes = input_btw_eyes;
+		
+	}
+	//for random image
 	public Stereogram(int input_btw_eyes, int input_patt_step) {
 		
 		btw_eyes = input_btw_eyes;
 		patt_step = input_patt_step;
 		
 	}
+	
 	
 	public int getBlueComponent(final int pixel) {
 		return (pixel & FIRST_BYTE_MASK)
@@ -140,100 +147,77 @@ public class Stereogram  {
 	        return bi;
 	    }
 
-	public int getPixelValue(int i, int j) {
-		if(i>height-1) {
-			i = height-1;
-		}
-		if(j>width-1) {
-			j = width-1;
-		}
-		if(i<0){
-			i=0;
-		}
-		if(j<0){
-			j=0;
-		}
-		return firstImagePixels[i*width + j];
-	}
-
-	public void setPixelValue(final int i, final int j, final int value) {
-		firstImagePixels[i*width + j] = value;
-	}
-
 	//-----------------------------------------------------------------------------------------------
 	public void process(final String ... path){
 		try {
-		height = firstImage.getHeight();
-		width = firstImage.getWidth();
-		firstImage = readImage(path[0]);
-		secondImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		firstImagePixels = getImagePixels(firstImage);
-		secondImagePixels = getImagePixels(secondImage);
+		
+		depthMapImage = readImage(path[0]);
+		depthMapImagePixels = getImagePixels(depthMapImage);
+		height = depthMapImage.getHeight();
+		width = depthMapImage.getWidth();
+		
+		
 		if(path.length >= 2) {
-			secondImage = readImage(path[1]);
-			if (firstImage.getWidth()%secondImage.getWidth()==0
-				&& firstImage.getHeight()%secondImage.getHeight()==0) {
-				
-				if((firstImage.getWidth() != secondImage.getWidth()
-						|| firstImage.getHeight() != secondImage.getHeight())){
-					tempSecondImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-					for ( int widthCount = 0; widthCount < (tempSecondImage.getWidth()/secondImage.getWidth()); widthCount++){
-					for ( int count = 0; count < (tempSecondImage.getHeight()/secondImage.getHeight()); count++){
-					for ( int i = 0; i < (secondImage.getHeight()); i++){
-						for( int j= 0; j < (secondImage.getWidth()); j++){
-							tempSecondImage.setRGB(i+(secondImage.getWidth()*widthCount), j+(secondImage.getHeight()*count), secondImage.getRGB(i, j));
+			patternImage = readImage(path[1]);				
+				if(depthMapImage.getWidth()/patternImage.getWidth() > 1){
+					resultImage = new BufferedImage((Math.round(depthMapImage.getWidth()/patternImage.getWidth())+1)*patternImage.getWidth(), ((Math.round(depthMapImage.getHeight()/patternImage.getHeight())+1)*patternImage.getHeight()), BufferedImage.TYPE_INT_RGB);
+					resultImagePixels = getImagePixels(resultImage);
+					for ( int widthCount = 0; widthCount < resultImage.getWidth()/patternImage.getWidth(); widthCount++){
+						for ( int heightCount = 0; heightCount < resultImage.getHeight()/patternImage.getHeight(); heightCount++){
+							for ( int i = 0; i < (patternImage.getHeight()); i++){
+								for( int j= 0; j < (patternImage.getWidth()); j++){
+									//resultImage.setRGB(j+(patternImage.getWidth()*widthCount), i+(patternImage.getHeight()*heightCount), patternImage.getRGB(j, i));			
+									resultImagePixels[j+(patternImage.getWidth()*widthCount) + resultImage.getWidth()*(i+(patternImage.getHeight()*heightCount))] = patternImage.getRGB(j, i);
+								}
+							}
 						}
-						}
-						}
-					File resultFile = new File(ROOT_PATH + "\\" + "Stereogram.png");
-					ImageIO.write(tempSecondImage, "png", resultFile);
+					}
 				}
-					
-				}
-				//throw new IllegalArgumentException("Check the size of images.");
-			}
-			secondImagePixels = getImagePixels(tempSecondImage);
+			
+			patt_step=patternImage.getWidth();
+			File resultFile = new File(ROOT_PATH + "\\" + "cats1.png");
+			ImageIO.write(resultImage, "png", resultFile);	
 		}
 		else{
 		
-		//
-		//	Distance between eyes is 60 pixels (btw_eyes)
-		//	Pattern step (patt_step) should be less than distance between eyes
-		//
-		
-		//if there is no input pattern
-		Random randomGenerator = new Random();
-		
-		// Fill image with random colors 
-		
-		int [] rnd_color = new int[patt_step*height];
-		for ( int i = 0; i < height; i++){
-			for( int j= 0; j < patt_step; j++){
-				int red = (int)(randomGenerator.nextInt(256));
-				int blue = (int)(randomGenerator.nextInt(256));
-				int green = (int)(randomGenerator.nextInt(256));
+			//
+			//	Distance between eyes is 60 pixels (btw_eyes)
+			//	Pattern step (patt_step) should be less than distance between eyes
+			//
 			
-				rnd_color[i*patt_step + j] = composePixel(blue, green, red);
+			//if there is no input pattern
+			Random randomGenerator = new Random();
+			resultImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			resultImagePixels = getImagePixels(resultImage);
+			// Fill image with random colors 
+			
+			int [] rnd_color = new int[patt_step*height];
+			for ( int i = 0; i < height; i++){
+				for( int j= 0; j < patt_step; j++){
+					int red = (int)(randomGenerator.nextInt(256));
+					int blue = (int)(randomGenerator.nextInt(256));
+					int green = (int)(randomGenerator.nextInt(256));
+				
+					rnd_color[i*patt_step + j] = composePixel(blue, green, red);
+				}
 			}
-		}
-			
-		// fulfill result image with random pixels 		
-		for( int h = 0; h < (int)(width/patt_step); h++){			
-		   for ( int i = 0; i < height; i++){
-			   for( int j= 0; j < patt_step; j++){
-				   secondImagePixels[i*width + (h*patt_step)+j] = rnd_color[i*patt_step + j];
+				
+			// fulfill result image with random pixels 		
+			for( int h = 0; h < (int)(width/patt_step); h++){			
+			   for ( int i = 0; i < height; i++){
+				   for( int j= 0; j < patt_step; j++){
+					   resultImagePixels[i*width + (h*patt_step)+j] = rnd_color[i*patt_step + j];
+				   }
 			   }
-		   }
-		}
+			}
 		}
 		
 		//for each stripe 
-		for( int h = 0; h < (int)(width/patt_step); h++){			   
+		for( int h = 0; h < (int)width/patt_step; h++){			   
 			   for ( int i = 0; i < height; i++){
-				   for( int j= 0; j < patt_step; j++){
-					   
+				   for( int j= 0; j < patt_step; j++){					   
 					      
-					       int argbnew = firstImagePixels[j+h*patt_step+ i*width];
+					       int argbnew = depthMapImagePixels[j+h*patt_step+ i*width];
 					       
 					       int rgb = getGreenComponent(argbnew);
 
@@ -244,19 +228,23 @@ public class Stereogram  {
 					    		   && 
 					    		   j+(int)((h-1)*patt_step-rgb*((patt_step-btw_eyes)/255.0)) > 0  
 					    	)
-					          secondImagePixels[j+(int)(h*patt_step) + i*width] = secondImagePixels[j+(int)((h-1)*patt_step-rgb*((patt_step-btw_eyes)/255.0)) + width*i];
-				   }
+					       {
+					    	   System.out.println(h+" "+i+" "+j);
+					    	 resultImagePixels[j+(int)(h*patt_step) + i*width] = resultImagePixels[j+(int)((h-1)*patt_step-rgb*((patt_step-btw_eyes)/255.0)) + width*i];
+//					    	   int color = resultImage.getRGB(j+(int)((h-1)*patt_step-rgb*((patt_step-btw_eyes)/255.0)),i);
+//					    	   resultImage.setRGB(j+(int)(h*patt_step),i, color);
+					    	   
+					       }
+					       
+					       }
+		    	  
 			    }
+			   File resultFile = new File(ROOT_PATH + "\\" + "Stereogram"+h+".png");
+				ImageIO.write(resultImage, "png", resultFile);	
+
 			}
 		File resultFile = new File(ROOT_PATH + "\\" + "Stereogram.png");
-		if (tempSecondImage!=null){
-			ImageIO.write(tempSecondImage, "png", resultFile);
-		}
-		else{
-			ImageIO.write(secondImage, "png", resultFile);
-		}
-		
-		
+			ImageIO.write(resultImage, "png", resultFile);	
 		}catch(IOException e){
 			e.printStackTrace();
 		} catch (URISyntaxException e) {
