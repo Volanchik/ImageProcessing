@@ -1,10 +1,7 @@
 package by.bsuir.course4.ImageProcessor.imageCreate;
 
-import java.awt.Color;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -52,7 +49,7 @@ public class Stereogram  {
 		
 	private int patt_step;
 	
-	private int btw_eyes = 50;
+	private int btw_eyes = 60;
 
 	
 	public Stereogram(int input_height, int input_width, int input_patt_step) {
